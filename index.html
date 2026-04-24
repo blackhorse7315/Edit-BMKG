@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Satelit Editor Pro</title>
     
-    <!-- Meta untuk PWA -->
+    <!-- Meta untuk PWA & Favicon -->
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT">
     <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -61,11 +62,13 @@
             @apply flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold transition-all active:scale-95;
         }
 
-        /* Container untuk logo agar ukurannya terkendali */
         .logo-container {
             width: 80px;
             height: 80px;
             margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -76,7 +79,7 @@
                 <img src="https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT" 
                      alt="Logo" 
                      class="w-full h-full object-contain"
-                     onerror="this.src='https://via.placeholder.com/80?text=SAT'">
+                     crossorigin="anonymous">
             </div>
             <h1 class="text-3xl font-bold text-blue-400 mb-2">Satelit Editor Pro</h1>
             <p class="text-slate-400 text-sm">Update header citra satelit dengan presisi tinggi.</p>
