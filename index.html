@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satelit Editor Pro</title>
+    
+    <!-- Meta untuk PWA -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        :root {
+            color-scheme: dark; 
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+        }
+
+        #canvas-container { 
+            max-width: 100%; 
+            overflow: auto; 
+            border: 2px solid #334155; 
+            border-radius: 0.75rem;
+            background: #000;
+        }
+
+        canvas { display: block; margin: 0 auto; }
+
+        .input-group { 
+            background-color: #1e293b !important;
+            border: 1px solid #475569 !important;
+            border-radius: 0.5rem;
+            padding: 0.6rem;
+            color: #ffffff !important;
+            width: 100%;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-group:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .btn-action {
+            @apply flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold transition-all active:scale-95;
+        }
+
+        /* Container untuk logo agar ukurannya terkendali */
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8 flex flex-col items-center text-center">
+            <div class="logo-container">
+                <img src="https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT" 
+                     alt="Logo" 
+                     class="w-full h-full object-contain"
+                     onerror="this.src='https://via.placeholder.com/80?text=SAT'">
+            </div>
+            <h1 class="text-3xl font-bold text-blue-400 mb-2">Satelit Editor Pro</h1>
+            <p class="text-slate-400 text-sm">Update header citra satelit dengan presisi tinggi.</p>
+            
+            <button id="installBtn" class="mt-4 hidden bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-full font-semibold shadow-lg transition-all">
+                ✚ Pasang ke Perangkat
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Sidebar Controls -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-2xl h-fit border border-slate-700 space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-blue-300">1. Unggah Gambar</label>
+                    <input type="file" id="imageInput" accept="image/*" 
+                        class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                </div>
+
+                <div class="space-y-4 pt-4 border-t border-slate-700">
+                    <label class="block text-sm font-semibold text-blue-300">2. Pengaturan Header</label>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setPreset('EH')" class="bg-slate-700 hover:bg-slate-600 py-2 rounded text-[10px] font-bold">PRESET EH</button>
+                        <button onclick="setPreset('IW')" class="bg-slate-700 hover:bg-slate-600 py-2 rounded text-[10px] font-bold">PRESET IW</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1">Nama Satelit</label>
+                        <input type="text" id="satName" value="HIMAWARI-9 EH" class="input-group">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1">Tanggal</label>
+                            <input type="date" id="satDate" class="input-group">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1">Jam (UTC)</label>
+                            <input type="time" id="satTime" class="input-group">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1">Ketebalan Header</label>
+                        <input type="range" id="headerHeightAdj" min="40" max="100" value="65" class="w-full accent-blue-500">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button id="downloadBtn" class="btn-action w-full bg-green-600 hover:bg-green-700 text-white hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Unduh Gambar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="lg:col-span-2">
+                <div class="bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-slate-300">Preview Hasil</h2>
+                        <span id="status" class="text-[10px] font-bold uppercase tracking-widest bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full">Siap</span>
+                    </div>
+                    <div id="canvas-container">
+                        <canvas id="editorCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusLabel = document.getElementById('status');
+
+        const satNameInput = document.getElementById('satName');
+        const satDateInput = document.getElementById('satDate');
+        const satTimeInput = document.getElementById('satTime');
+        const headerHeightAdj = document.getElementById('headerHeightAdj');
+
+        let originalImage = null;
+
+        const today = new Date();
+        satDateInput.value = today.toISOString().split('T')[0];
+        satTimeInput.value = "14:40";
+
+        function setPreset(type) {
+            satNameInput.value = type === 'EH' ? "HIMAWARI-9 EH" : "HIMAWARI-9 IW";
+            if (originalImage) processImage();
+        }
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    processImage();
+                    downloadBtn.classList.remove('hidden');
+                    statusLabel.innerText = "Terproses";
+                };
+                originalImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        [satNameInput, satDateInput, satTimeInput, headerHeightAdj].forEach(input => {
+            input.addEventListener('input', () => {
+                if (originalImage) processImage();
+            });
+        });
+
+        function processImage() {
+            if (!originalImage) return;
+
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+
+            ctx.drawImage(originalImage, 0, 0);
+
+            const hFactor = headerHeightAdj.value / 1000; 
+            const h = Math.round(canvas.height * hFactor);
+            const w = Math.round(canvas.width * 0.65);
+
+            const patchSourceY = Math.round(canvas.height * 0.20); 
+            ctx.drawImage(originalImage, 0, patchSourceY, w, h, 0, 0, w, h);
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.55)"; 
+            ctx.fillRect(0, 0, w, h);
+
+            const d = satDateInput.value.split('-');
+            const fDate = d.length === 3 ? `${d[2]}/${d[1]}/${d[0]}` : '';
+            const txt = `${satNameInput.value} ${fDate} ${satTimeInput.value} UTC`;
+
+            const fSize = Math.round(canvas.height * 0.038);
+            ctx.font = `bold ${fSize}px Arial, Helvetica, sans-serif`;
+            ctx.fillStyle = "white"; 
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+
+            const mx = Math.round(canvas.width * 0.015);
+            ctx.fillText(txt, mx, h / 2);
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            const link = document.createElement('a');
+            const dStr = satDateInput.value.replace(/-/g, '');
+            const tStr = satTimeInput.value.replace(/:/g, '');
+            link.download = `Satelit_Editor_${dStr}_${tStr}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installBtn.classList.add('hidden');
+            }
+        });
+
+        const manifest = {
+            "name": "Satelit Editor Pro",
+            "short_name": "SatEditor",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "icons": [
+                {
+                    "src": "https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://lh3.googleusercontent.com/d/1UN9aTnhlhcgseGewqyLhWgylYVKiipwT",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector('head').insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestURL}">`);
+    </script>
+</body>
+</html>
