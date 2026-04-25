@@ -37,7 +37,6 @@
 
         canvas { display: block; margin: 0 auto; }
 
-        /* Input styling */
         .input-group { 
             background-color: #1e293b !important;
             border: 1px solid #334155 !important;
@@ -60,7 +59,6 @@
             cursor: pointer;
         }
 
-        /* Tombol Unduh Modern */
         .download-btn-modern {
             @apply flex items-center justify-center gap-3 px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-300;
             background-color: #2563eb; 
@@ -112,7 +110,6 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <!-- Sidebar Controls -->
             <div class="lg:col-span-4 bg-slate-800/50 backdrop-blur-xl p-7 rounded-2xl shadow-2xl border border-slate-700/50 space-y-6">
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">1. Berkas Citra</label>
@@ -170,7 +167,6 @@
                 </div>
             </div>
 
-            <!-- Preview Area -->
             <div class="lg:col-span-8">
                 <div class="bg-slate-800/30 backdrop-blur-md p-5 rounded-2xl border border-slate-700/50 shadow-2xl">
                     <div class="flex justify-between items-center mb-5">
@@ -255,21 +251,27 @@
 
             canvas.width = originalImage.width;
             canvas.height = originalImage.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // 1. Gambar Dasar
             ctx.drawImage(originalImage, 0, 0);
 
             const hFactor = headerHeightAdj.value / 1000; 
             const h = Math.round(canvas.height * hFactor);
             const w = Math.round(canvas.width * 0.65);
 
+            // 2. Patching tekstur (Ambil sampel dari area yang jauh di bawah agar bersih)
             const patchSourceY = Math.round(canvas.height * 0.20); 
             ctx.drawImage(originalImage, 0, patchSourceY, w, h, 0, 0, w, h);
 
+            // 3. Overlay Hitam 55%
             ctx.fillStyle = "rgba(0, 0, 0, 0.55)"; 
             ctx.fillRect(0, 0, w, h);
 
+            // 4. Formulasi Teks
             const d = satDateInput.value.split('-');
             const fDate = d.length === 3 ? `${d[2]}/${d[1]}/${d[0]}` : '';
+            // Teks UTC menempel rapat pada angka menit
             const txt = `${satNameInput.value} ${fDate} ${satTimeInput.value}UTC`;
 
             const fSize = Math.round(canvas.height * 0.038);
@@ -289,37 +291,49 @@
             const year = d[0];
             const monthName = monthsID[parseInt(d[1]) - 1];
             const day = d[2];
-            const time = satTimeInput.value.replace(/:/g, '');
+            const timeRaw = satTimeInput.value.replace(/:/g, '');
 
             const prefix = currentPreset === 'EH' ? 'BMKG' : 'Wind';
-            const fileName = `${prefix} ${day} ${monthName} ${year} ${time}UTC.png`;
+            const fileName = `${prefix} ${day} ${monthName} ${year} ${timeRaw}UTC.png`;
 
-            // Cek apakah browser mendukung File System Access API
-            if ('showSaveFilePicker' in window) {
-                try {
+            try {
+                // Menghasilkan blob PNG berkualitas tinggi
+                const blob = await new Promise((resolve) => {
+                    canvas.toBlob((b) => resolve(b), 'image/png', 1.0);
+                });
+
+                if (!blob) throw new Error("Gagal membuat data gambar");
+
+                // Fitur Simpan Sebagai (Pilih Folder)
+                if ('showSaveFilePicker' in window) {
                     const handle = await window.showSaveFilePicker({
                         suggestedName: fileName,
                         types: [{
-                            description: 'PNG Image',
+                            description: 'Gambar PNG',
                             accept: {'image/png': ['.png']},
                         }],
                     });
                     
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     const writable = await handle.createWritable();
                     await writable.write(blob);
                     await writable.close();
-                } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        console.error('Gagal menyimpan file:', err);
-                    }
+                } else {
+                    // Fallback untuk browser yang tidak mendukung picker
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = url;
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
                 }
-            } else {
-                // Fallback untuk browser yang tidak mendukung picker
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    // Upaya terakhir jika picker gagal (biasanya karena sandbox iframe)
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                }
             }
         });
 
